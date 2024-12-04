@@ -10,3 +10,44 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## R Markdown
+```{R}
+library(tidyverse)
+library(classdata)
+library(rvest)
+#Get html data and put into tables
+url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
+html <- read_html(url)
+html
+
+tables <- html %>% html_table(fill = TRUE)
+
+HoF <- tables[[1]]
+
+library(Lahman)
+head(HallOfFame, 3)
+head(HoF, 3)
+View(HallOfFame)
+#Make first row the column names
+colnames(HoF) <- HoF[1,]
+#Delete first row, since has the col titles still
+HoF <- HoF[-1,]
+#Remove Unneeded columns
+HoF <- HoF[,-5:-39]
+HoF <- HoF[,-1]
+HoF <- HoF[,-2]
+
+#Add missing columns and fill in information
+HoF <- HoF %>% mutate(
+  playerID = tolower(gsub("X-", "", sub(" ", "", Name))),
+  yearID = 2023,
+  votedBy = "BBWAA",
+  ballots = 385,
+  needed = 289,
+  inducted = ifelse(Votes>=289, "Y", "N"),
+  category = "Player", # don't know yet
+  needed_note = NA # not sure what would go here
+) %>% rename(
+  votes = Votes
+) %>% select(-Name)
+
+```
