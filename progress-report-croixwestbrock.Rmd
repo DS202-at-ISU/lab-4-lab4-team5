@@ -1,0 +1,171 @@
+---
+title: "Croix's Lab 4 Report"
+author: "Croix Westbrock"
+date: "2024-12-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(Lahman)
+library(rvest)
+```
+
+```{r}
+# Get the data
+url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+
+data <- tables[[1]]
+```
+
+```{r}
+# Making the data look like the Lahman dataset (column names and types)
+actual_col_names <- data[1, ]
+colnames(data) <- actual_col_names
+data <- data[-1, ]
+head(data, 3)
+
+data$Votes <- as.numeric(data$Votes)
+data <- data %>% select(
+  Name, Votes, 
+) %>% mutate(
+  yearID = 2024,
+  votedBy = "BBWAA",
+  ballots = 385,
+  needed = 289,
+  inducted = ifelse(Votes>=289, "Y", "N"),
+  category = NA, # don't know yet
+  needed_note = NA # not sure what would go here
+) %>% rename(
+  votes = Votes, 
+  player_name = Name
+)
+
+data$player_name <- gsub("X-", "", data$player_name)
+data$votes <- as.integer(data$votes)
+data$inducted <- factor(data$inducted)
+data$needed_note <- as.character(data$needed_note)
+data$category <- factor(data$category, levels = c("Executive", "Manager", "Pioneer", "Pioneer/Executive", "Player", "Umpire"))
+data
+```
+
+```{r}
+# Changing player names into player ids
+player_id <- People %>% 
+  mutate(
+    player_name = paste(nameFirst, nameLast)
+  ) %>% 
+  select(playerID, player_name)
+
+data %>% anti_join(player_id, 
+                    by = "player_name")
+
+data <- data %>% 
+  mutate(
+    player_name = str_replace_all(player_name,
+                              c("\\á" = "a", "\\é" = "e", "\\í" = "i", "\\ó" = "o"))
+  )
+
+data %>% anti_join(player_id, 
+                    by = "player_name")
+
+data <- data %>% left_join(player_id, by = "player_name") %>% 
+  select(
+    names(HallOfFame)
+  )
+
+data
+```
+
+```{r}
+# Combine with rest of data
+HoF_Complete <- rbind(data, HallOfFame)
+```
+
+
+```{r}
+HoF_Complete
+```
+
+```{r}
+# Function of above work made into a function for a given year
+Year_BBHOF <- function(url) {
+  html <- read_html(url)
+  tables <- html_table(html)
+
+  data <- tables[[1]]
+  
+  actual_col_names <- data[1, ]
+  colnames(data) <- actual_col_names
+  data <- data[-1, ]
+  
+  data$Votes <- as.numeric(data$Votes)
+  data <- data %>% select(
+    Name, Votes, 
+  ) %>% mutate(
+    yearID = 2024,
+    votedBy = "BBWAA",
+    ballots = 385,
+    needed = 289,
+    inducted = ifelse(Votes>=289, "Y", "N"),
+    category = NA, # don't know yet
+    needed_note = NA # not sure what would go here
+  ) %>% rename(
+    votes = Votes, 
+    player_name = Name
+  )
+  
+  data$player_name <- gsub("X-", "", data$player_name)
+  data$votes <- as.integer(data$votes)
+  data$inducted <- factor(data$inducted)
+  data$needed_note <- as.character(data$needed_note)
+  data$category <- factor(data$category, levels = c("Executive", "Manager", "Pioneer", "Pioneer/Executive", "Player", "Umpire"))
+
+  player_id <- People %>% 
+  mutate(
+    player_name = paste(nameFirst, nameLast)
+  ) %>% 
+  select(playerID, player_name)
+
+  data <- data %>% 
+    mutate(
+      player_name = str_replace_all(player_name,
+                                c("\\á" = "a", "\\é" = "e", "\\í" = "i", "\\ó" = "o"))
+    )
+  
+  player_id <- player_id %>% 
+  mutate(
+    player_name = str_replace(player_name,
+                              "\\. ",
+                              ".")
+  )
+  
+  data <- data %>% left_join(player_id, by = "player_name") %>% 
+    select(
+      names(HallOfFame)
+    )
+  
+  data
+}
+
+Year_BBHOF("https://www.baseball-reference.com/awards/hof_2024.shtml")
+```
+
+```{r}
+# Testing 
+HoF_Complete <- rbind(Year_BBHOF("https://www.baseball-reference.com/awards/hof_2024.shtml"), HallOfFame)
+HoF_Complete
+```
+
+```{r}
+HoF_Complete %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar()
+```
+

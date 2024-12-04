@@ -7,6 +7,8 @@ output: github_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(Lahman)
+library(rvest)
 ```
 
 # Lab report #4 - instructions
@@ -29,3 +31,77 @@ hof %>%
   xlim(c(2000, 2022)) +
   ylab("Percent of votes")
 ```
+
+```{r}
+# Function of above work made into a function for a given year
+Year_BBHOF <- function(url) {
+  html <- read_html(url)
+  tables <- html_table(html)
+
+  data <- tables[[1]]
+  
+  actual_col_names <- data[1, ]
+  colnames(data) <- actual_col_names
+  data <- data[-1, ]
+  
+  data$Votes <- as.numeric(data$Votes)
+  data <- data %>% select(
+    Name, Votes, 
+  ) %>% mutate(
+    yearID = 2024,
+    votedBy = "BBWAA",
+    ballots = 385,
+    needed = 289,
+    inducted = ifelse(Votes>=289, "Y", "N"),
+    category = NA, # don't know yet
+    needed_note = NA # not sure what would go here
+  ) %>% rename(
+    votes = Votes, 
+    player_name = Name
+  )
+  
+  data$player_name <- gsub("X-", "", data$player_name)
+  data$votes <- as.integer(data$votes)
+  data$inducted <- factor(data$inducted)
+  data$needed_note <- as.character(data$needed_note)
+  data$category <- factor(data$category, levels = c("Executive", "Manager", "Pioneer", "Pioneer/Executive", "Player", "Umpire"))
+
+  player_id <- People %>% 
+  mutate(
+    player_name = paste(nameFirst, nameLast)
+  ) %>% 
+  select(playerID, player_name)
+
+  data <- data %>% 
+    mutate(
+      player_name = str_replace_all(player_name,
+                                c("\\á" = "a", "\\é" = "e", "\\í" = "i", "\\ó" = "o"))
+    )
+  
+  player_id <- player_id %>% 
+  mutate(
+    player_name = str_replace(player_name,
+                              "\\. ",
+                              ".")
+  )
+  
+  data <- data %>% left_join(player_id, by = "player_name") %>% 
+    select(
+      names(HallOfFame)
+    )
+  
+  data
+}
+
+hof24 <- Year_BBHOF("https://www.baseball-reference.com/awards/hof_2024.shtml")
+
+HoF_Complete <- rbind(hof24, HallOfFame)
+HoF_Complete
+```
+
+```{r}
+HoF_Complete %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar()
+```
+
