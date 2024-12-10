@@ -1,0 +1,98 @@
+---
+title: "Tej0712's Lab 4 Report"
+author: "Tej0712"
+date: "2024-12-09"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(ggplot2)
+library(Lahman)
+
+```
+
+
+```{r}
+
+# Define the URL for scraping
+url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
+
+# Read the HTML content
+html <- read_html(url)
+
+# Extract the tables
+tables <- html_table(html)
+
+# Select the first table (assuming it's the relevant one)
+raw_data <- tables[[1]]
+
+
+```
+
+
+```{r}
+# Assign column names from the first row, then remove the first row
+colnames(raw_data) <- raw_data[1, ]
+raw_data <- raw_data[-1, ]
+
+# Select relevant columns and convert to the appropriate types
+cleaned_data <- raw_data %>%
+  select(Name, Votes = `Votes`) %>%
+  mutate(
+    Votes = as.numeric(Votes),
+    yearID = 2024,
+    votedBy = "BBWAA",
+    ballots = 385,
+    needed = 289,
+    inducted = ifelse(Votes >= 289, "Y", "N"),
+    category = NA,
+    needed_note = NA
+  )
+
+```
+
+```{r}
+# Add the cleaned data to the existing HallOfFame dataset
+combined_data <- bind_rows(
+  HallOfFame,
+  cleaned_data %>% rename(player_name = Name, votes = Votes)
+)
+
+
+```
+
+```{r}
+# Display the structure of the combined dataset
+str(combined_data)
+
+
+```
+
+```{r}
+# Create a bar chart for inductees by year
+ggplot(combined_data, aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  labs(
+    title = "Baseball Hall of Fame Inductees (1936–2024)",
+    x = "Year",
+    y = "Count of Inductees"
+  ) +
+  theme_minimal()
+
+
+```
+
+## Reflection and Notes
+
+- **Challenges Faced**: Matching player names with IDs required additional cleaning, as some names included special characters or unconventional formatting.
+- **Future Improvements**: Automating the detection and handling of discrepancies in player names will improve accuracy and efficiency.
+- **Key Takeaways**: Understanding how to structure web-scraped data to match a predefined schema and combining it with existing datasets for analysis.
+
