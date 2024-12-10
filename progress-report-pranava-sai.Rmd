@@ -1,0 +1,107 @@
+---
+title: "Pranava's Lab 4 Report"
+author: "Pranava Sai Maganti"
+date: "2024-12-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(ggplot2)
+library(Lahman)
+
+```
+
+
+```{r}
+
+# Define the URL for scraping
+dataset_webpage_url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
+
+# Read the HTML content
+web_html <- read_html(dataset_webpage_url)
+
+# Extract the tables
+dataset_tables <- html_table(web_html)
+
+# Select the first table (assuming it's the relevant one)
+raw_data <- dataset_tables[[1]]
+
+```
+
+
+```{r}
+# Assign column names from the first row, then remove the first row
+colnames(raw_data) <- raw_data[1, ]
+raw_data <- raw_data[-1, ]
+
+# Select relevant columns and convert to the appropriate types
+data_clean <- raw_data %>%
+  select(Name, Votes = `Votes`) %>%
+  mutate(
+    Votes = as.numeric(Votes),
+    yearID = 2024,
+    votedBy = "BBWAA",
+    ballots = 385,
+    needed = 289,
+    inducted = ifelse(Votes >= 289, "Y", "N"),
+    category = NA,
+    needed_note = NA
+  )
+
+```
+
+```{r}
+# Add the cleaned data to the existing HallOfFame dataset
+allData <- bind_rows(
+  HallOfFame,
+  data_clean %>% rename(player_name = Name, votes = Votes)
+)
+```
+
+```{r}
+# Display the structure of the combined dataset
+str(allData)
+```
+
+```{r}
+# Create a bar chart for inductees by year
+ggplot(allData, aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  scale_fill_manual(
+    values = c("Y" = "#FF0000", "N" = "#008000"), # Vibrant colors for "Y" and "N"
+    labels = c("Not Inducted", "Inducted")
+  ) +
+  labs(
+    title = "Hall of Fame Induction Trends (1936–2024)",
+    x = "Induction Year",
+    y = "Number of Players Inducted"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5), # Bold and centered title
+    axis.title = element_text(size = 14), # Larger axis titles
+    axis.text = element_text(size = 12),  # Larger axis text
+    legend.position = "right"               # Position legend at the top
+  )
+
+```
+
+## Reflection and Notes**
+
+- **Challenges Encountered**: While aligning player names with their corresponding IDs, I had several challenges that required extensive data cleaning. The presence of special characters and inconsistencies in the formatting of names complicated this task. This process stressed the importance of utilizing strong data preprocessing methods to ensure reliable alignment.
+
+- **Future Enhancements**: To improve efficiency and accuracy in future projects, developing and implementing automated tools or algorithms capable of identifying and correcting dissimilarities in player names would be beneficial. Such creations could significantly streamline the data alignment process and reduce the manual effort required.
+
+- **Key Insights**: Completing this lab provided me with valuable insights into web scraping across various data sizes while adhering to a predefined schema. Additionally, I gained experience in combining the scraped data with existing datasets. This process played a significant role and ensured that thorough data cleaning and analysis were meaningful and accurate.
+
+
+
+
+
