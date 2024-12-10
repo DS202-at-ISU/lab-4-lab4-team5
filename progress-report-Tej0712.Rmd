@@ -76,6 +76,12 @@ str(combined_data)
 
 ```
 
+``` {r}
+# Export the combined dataset
+write_csv(combined_hof, "HallOfFame.csv", na = "")
+
+```
+
 ```{r}
 # Create a bar chart for inductees by year
 ggplot(combined_data, aes(x = yearID, fill = inducted)) +
