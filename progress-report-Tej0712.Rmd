@@ -1,5 +1,5 @@
 ---
-title: "Umesh Sai Teja Poola's Lab 4 Report"
+title: "Umesh Sai teja Poola's Lab 4 Report"
 author: "Umesh Sai Teja Poola"
 date: "2024-12-09"
 output: html_document
@@ -16,6 +16,7 @@ library(rvest)
 library(dplyr)
 library(ggplot2)
 library(Lahman)
+library(readr)
 
 ```
 
@@ -53,8 +54,8 @@ cleaned_data <- raw_data %>%
     ballots = 385,
     needed = 289,
     inducted = ifelse(Votes >= 289, "Y", "N"),
-    category = NA,
-    needed_note = NA
+    category = "Player",
+    needed_note = "<"
   )
 
 ```
@@ -78,9 +79,9 @@ str(combined_data)
 
 ``` {r}
 # Export the combined dataset
-write_csv(combined_hof, "HallOfFame.csv", na = "")
-
+write_csv(combined_data, "HallOfFame_Umesh.csv", na = "")
 ```
+
 
 ```{r}
 # Create a bar chart for inductees by year
