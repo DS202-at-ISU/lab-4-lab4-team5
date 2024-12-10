@@ -1,6 +1,6 @@
 ---
-title: "Tej0712's Lab 4 Report"
-author: "Tej0712"
+title: "Umesh Sai Teja Poola's Lab 4 Report"
+author: "Umesh Sai Teja Poola"
 date: "2024-12-09"
 output: html_document
 ---
