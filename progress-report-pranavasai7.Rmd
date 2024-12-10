@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(rvest)
 library(dplyr)
+library(readr)
 library(ggplot2)
 library(Lahman)
 
@@ -42,17 +43,22 @@ colnames(raw_data) <- raw_data[1, ]
 raw_data <- raw_data[-1, ]
 
 # Select relevant columns and convert to the appropriate types
+# Clean column names for easier handling (optional)
+# raw_data <- clean_names(raw_data)
+
+# Check and transform the data
 data_clean <- raw_data %>%
   select(Name, Votes = `Votes`) %>%
   mutate(
+    playerID = NA,
     Votes = as.numeric(Votes),
     yearID = 2024,
     votedBy = "BBWAA",
     ballots = 385,
     needed = 289,
     inducted = ifelse(Votes >= 289, "Y", "N"),
-    category = NA,
-    needed_note = NA
+    category = "Player",
+    needed_note = "<"
   )
 
 ```
@@ -68,6 +74,11 @@ allData <- bind_rows(
 ```{r}
 # Display the structure of the combined dataset
 str(allData)
+```
+
+```{r}
+# Export the combined dataset
+readr::write_csv(allData, "HallOfFame-pranavasai7.csv")
 ```
 
 ```{r}
